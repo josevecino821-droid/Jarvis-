@@ -1,0 +1,29 @@
+name: Build APK
+on:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.7
+      - name: Build
+        run: |
+          unzip -q Jarvis.zip
+          mkdir -p Jarvis/app/src/main/assets
+          curl -L -o Jarvis/app/src/main/assets/hand_landmarker.task https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task
+          cd Jarvis && gradle assembleDebug --no-daemon
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Jarvis ${{ github.run_number }}
+          files: Jarvis/app/build/outputs/apk/debug/*.apk
